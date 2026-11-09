@@ -1,21 +1,19 @@
-# IT Support Toolkit
+# PC Inventory Toolkit
 
-Scripts and configuration for IT support work, plus the setup to run Claude
-Code as a local agent that can actually touch the machine in front of you.
+Inventory a Windows or Linux PC well enough to **order the right part** — without
+opening the case.
 
-Built for two jobs:
-
-1. **Inventory a PC well enough to order the right part** without opening it.
-2. **Get Claude Code running locally** with the right permission mode, instead
-   of in a cloud container that can't see your hardware.
+Two dependency-free scripts and a field guide for turning raw specs into a
+correct order. Built around a practical question: what do I actually need to
+know to buy a compatible replacement or upgrade?
 
 ---
 
 ## Quickstart
 
 ```powershell
-git clone https://github.com/zachcoble/coble.git
-cd coble
+git clone https://github.com/zachcoble/pc-inventory-toolkit.git
+cd pc-inventory-toolkit
 
 # Hardware inventory (run elevated for complete results)
 .\scripts\Get-PCSpecs.ps1
@@ -38,57 +36,9 @@ sudo ./scripts/get-pc-specs.sh
 |---|---|
 | `scripts/Get-PCSpecs.ps1` | Windows hardware inventory aimed at ordering parts |
 | `scripts/get-pc-specs.sh` | Linux equivalent (dmidecode / lsblk / lspci) |
-| `templates/claude-settings.json` | Claude Code permission config to copy into a project or `~/.claude/` |
-| `docs/claude-code-local-setup.md` | Install the CLI, permission modes, settings precedence |
 | `docs/ordering-parts.md` | Turning the script's output into a correct order |
-
----
-
-## Why the cloud session couldn't tell you your PC specs
-
-Worth understanding, because it generalizes.
-
-A Claude Code session started from the web runs in an **ephemeral Linux
-container in Anthropic's cloud**. It clones your repo and gives you an agent
-with real tools - but those tools operate on the container, not on your
-desktop. Asking it about your CPU gets you an honest answer about the wrong
-machine:
-
-```
-Model name:   Intel(R) Xeon(R) Processor @ 2.80GHz
-CPU(s):       4
-Mem:          15Gi
-```
-
-That's a hypervisor slice. Your PC is not involved.
-
-This is the same mistake as running `lscpu` inside a VM, or `dmidecode` inside
-WSL, and thinking you learned something about the host. The tool is telling the
-truth about the layer it's standing on. **Always know which layer you're
-standing on** - it's the thing that catches people out when they start doing
-virtualization and cloud work, and it's worth internalizing early.
-
-To inventory your own hardware you need the agent running *on* that hardware:
-[`docs/claude-code-local-setup.md`](docs/claude-code-local-setup.md).
-
----
-
-## Permission modes, briefly
-
-The "let it just do the work" setting you're after:
-
-| Mode | Behavior |
-|---|---|
-| `default` (Manual) | Asks before each new tool |
-| `acceptEdits` | Auto-accepts file edits and routine filesystem commands |
-| `auto` | Auto-approves with a background safety classifier |
-| `bypassPermissions` | No prompts at all - isolated VMs only |
-
-`Shift+Tab` cycles modes mid-session. On Pro and Max plans sessions already
-start in `auto`, so you may have had this the whole time.
-
-Details, the settings-precedence gotcha, and rule syntax in
-[`docs/claude-code-local-setup.md`](docs/claude-code-local-setup.md).
+| `docs/claude-code-local-setup.md` | Running Claude Code locally so it can see real hardware |
+| `templates/claude-settings.json` | Claude Code permission config to copy into a project or `~/.claude/` |
 
 ---
 
@@ -98,3 +48,34 @@ Details, the settings-precedence gotcha, and rule syntax in
   install. Run as Administrator for serial numbers and full disk detail.
 - **Linux script:** bash, plus `dmidecode`, `pciutils`, `util-linux` for full
   output. Degrades gracefully without them.
+
+---
+
+## Also here: know which layer you're standing on
+
+The scripts above have to run *on* the hardware you're asking about. That sounds
+obvious until you try it from a cloud agent session.
+
+A Claude Code session started from the web runs in an ephemeral Linux container
+in Anthropic's cloud. It clones your repo and gives you real tools — but those
+tools operate on the container, not on your desktop. Asking it about your CPU
+gets you an honest answer about the wrong machine:
+
+```
+Model name:   Intel(R) Xeon(R) Processor @ 2.80GHz
+CPU(s):       4
+Mem:          15Gi
+```
+
+That's a hypervisor slice. Your PC is not involved.
+
+It's the same mistake as running `lscpu` inside a VM, or `dmidecode` inside WSL,
+and thinking you learned something about the host. The tool is telling the truth
+about the layer it's standing on — which is the thing that catches people out
+when they start doing virtualization and cloud work.
+
+To inventory your own hardware you need the agent running on that hardware.
+Install steps, permission modes (`default` → `acceptEdits` → `auto` →
+`bypassPermissions`), and the settings-precedence gotcha are in
+[`docs/claude-code-local-setup.md`](docs/claude-code-local-setup.md); a ready-made
+permission config is in [`templates/claude-settings.json`](templates/claude-settings.json).
